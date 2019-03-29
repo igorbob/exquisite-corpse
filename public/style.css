@@ -1,0 +1,130 @@
+body {
+  background-color: #C3C3C3;
+  font-family: sans-serif;
+}
+
+.vertical {
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.horizontal {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+#header-image {
+  flex: 1;
+  margin-bottom: 25px;
+}
+
+#position-indicator {
+  font-family: 'Inconsolata', monospace;
+  font-size: 12pt;
+  flex: 1;
+  user-select: none;
+  text-align: left;
+  margin: 5px;
+  width: 30px;
+}
+
+#strip-width-indicator {
+  flex: 1;
+  user-select: none;
+  margin-top: 351px;
+  width: 40px;
+  font-size: 20pt;
+}
+
+#the-canvas {
+  user-select: none;
+  touch-action: pinch-zoom;
+  cursor: crosshair;
+  display: block;
+  flex: 2;
+}
+
+#toolbar {
+  user-select: none;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.tool-buttons {
+  display: inline-block;
+}
+
+.selected {
+  border-color: white;
+}
+
+#done-button {
+  font-family: 'Inconsolata';
+  font-size: 14pt;
+  letter-spacing: 2px;
+  margin-right: 12px;
+  width: 120px;
+}
+
+#copy-button {
+  font-family: 'Inconsolata';
+  font-size: 14pt;
+  letter-spacing: 2px;
+  margin-right: 12px;
+  width: 120px;
+}
+
+.copied {
+  color: #35b50a;
+  border-color: #35b50a;
+}
+
+.copied:hover {
+  border-color: #35b50a;
+}
+
+#share-url {
+  margin-top: 12px;
+  margin-left:12px;
+  height: 40px;
+  width: 208px;
+  text-align: center;
+  background-color: ivory;
+  border: 0;
+  padding: 0px;
+}
+
+tool-btn {
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+    line-height: 36px;
+    font-size: 12pt;
+    height: 36px;
+    width: 36px;
+    border-style: solid;
+    border-width: 2px;
+    border-color: black;
+    border-radius: 4px;
+    margin-top: 12px;
+    margin-left: 12px;
+}
+
+tool-btn:hover {
+  border-color: darkgray;
+}
+
+img {
+    user-drag: none;
+    user-select: none;
+}
+
+footer {
+  text-align: center;
+}
