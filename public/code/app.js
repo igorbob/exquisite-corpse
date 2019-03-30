@@ -8,7 +8,14 @@ const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz';
 
 var controls = Object.create(null);
 
-function initApp(parent) {
+// main layout:
+//--------------------------------------------------------------------//
+//                                #logo                               //
+//  .paper[ #position-indicator,  #canvas,  #strip-width-indicator ]  //
+//                                #toolbar                            //
+//--------------------------------------------------------------------//
+
+window.onload = function() {
   //initialize firebase
   var config = {
     apiKey: "AIzaSyCNygh6ULvyoqM9p6HXGi1--5Hl8_KsIXA",
@@ -23,9 +30,13 @@ function initApp(parent) {
   var database = firebase.database();
   var image_base = database.ref('images');
 
-  //create canvas
-  var canvas = element("canvas", {id: "the-canvas",
-          width: X * PIXEL_SIZE, height: Y * PIXEL_SIZE});
+  //size canvas
+  var canvas = document.getElementById('the-canvas');
+  canvas.width = X * PIXEL_SIZE
+  canvas.height = Y * PIXEL_SIZE
+
+  document.getElementById("position-indicator").innerHTML = 1 + "/" + FOLD_LENGTH;
+
   var context = canvas.getContext("2d");
   var previous = {id: window.location.pathname.substring(1), position: 1};
   var pixels = [];
@@ -34,13 +45,12 @@ function initApp(parent) {
       pixels.push(0);
     }
   }
-  var position_indicator = element("div", {id: "position-indicator"}, (1 + "/" + FOLD_LENGTH) );
-  var strip_width_indicator = element("div", {id: "strip-width-indicator"}, "┈");
+
   //get parent image if it exists
   if (previous.id)
-    image_base.child(previous.id).once('value', gotParent);
-  function gotParent(data) {
+    image_base.child(previous.id).once('value', drawPrevious);
 
+  function drawPrevious(data) {
     var pixel_data = b64decode(data.val().pixels);
 
     previous.position = data.val().position;
@@ -52,12 +62,12 @@ function initApp(parent) {
       pixels[i] = pixel_data[strip_start + i];
     drawPixels(context, pixels);
   }
+
   drawPixels(context, pixels);
-  var toolbar = element("div", {id: "toolbar"});
+  var toolbar = document.getElementById("toolbar");
   for (var name in controls)
     toolbar.appendChild(controls[name](context, pixels, previous, image_base));
 
-  // if user clicks "done" , drawing stops and user gets a sharable link.
   toolbar.addEventListener('done_drawing', function(e) {
     // remove drawing tools and UI elements:
     tools = Object.create(null);
@@ -83,7 +93,7 @@ function initApp(parent) {
             anchor.href = canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
             anchor.download = 'excorp.png';
         });
-    } else {
+    } else { // otherwise we return a sharable link
         var share_url = element("input", {id: "share-url", value: (window.location.hostname + '/' + e.detail.id)});
         var copy_button = element("tool-btn", {id: "copy-button"}, "COPY");
         toolbar.appendChild(share_url);
@@ -98,11 +108,6 @@ function initApp(parent) {
         share_url.select();
     }
   } , false);
-
-  var header = element("img", {src: "header.png", id: "header-image"});
-  var panel = element("div", {id: "picturepanel"}, canvas);
-  var horizontal = element("div", {class: "horizontal"}, position_indicator, panel, strip_width_indicator);
-  parent.appendChild(element("div", {class: "vertical"}, header,horizontal, toolbar ));
 }
 
 function getFullImage(image_base, position, id) {
