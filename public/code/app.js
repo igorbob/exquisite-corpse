@@ -8,7 +8,7 @@ const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz';
 
 var controls = Object.create(null);
 
-function initCanvas(parent) {
+function initApp(parent) {
   //initialize firebase
   var config = {
     apiKey: "AIzaSyCNygh6ULvyoqM9p6HXGi1--5Hl8_KsIXA",
@@ -41,15 +41,7 @@ function initCanvas(parent) {
     image_base.child(previous.id).once('value', gotParent);
   function gotParent(data) {
 
-    var pixel_data =
-        atob(data.val().pixels)  //convert from base64
-        .split('')
-        .map(function(x) {
-          return ('0000000' + x.charCodeAt(0).toString(2)).substr(-8, 8);
-        })
-        .join('')   // "0101"
-        .split('') // ["0","1","0","1"]
-        .map(Number) // [0,1,0,1]
+    var pixel_data = b64decode(data.val().pixels);
 
     previous.position = data.val().position;
     var pos_text = ((previous.position + 1) + "/" + FOLD_LENGTH);
@@ -116,13 +108,13 @@ function initCanvas(parent) {
 function getFullImage(image_base, position, id) {
   if (position == 1) {
       return image_base.child(id).once('value').then(function(data){
-          var pixel_data = data.val().pixels.split('').map(Number);
+          var pixel_data = b64decode(data.val().pixels);
           return pixel_data;
       });
   } else {
       return image_base.child(id).once('value').then(function(data){
           return getFullImage(image_base, position - 1, data.val().parent_id).then(function(parent_pixels){
-              var pixel_data = data.val().pixels.split('').map(Number);
+              var pixel_data = b64decode(data.val().pixels);
               parent_pixels.splice(-STRIP_SIZE * X); // remove strip
               return parent_pixels.concat(pixel_data);
           });
@@ -146,6 +138,10 @@ function drawPixels(context, pixels, resolution = {x: X, y: Y}) {
     }
   }
 }
+
+// ------------------------------------------------------ //
+//    DRAWING TOOLS: ThickLine, Line, Erase & Dither      //
+// ------------------------------------------------------ //
 
 var tools = Object.create(null);
 
@@ -239,7 +235,6 @@ function drawLine(pixels, start_pos, end_pos, color) {
         }
         addPixel(pixels, {x: x1, y: y1}, color);
     }
-
 }
 
 function trackDrag(onMove) {
@@ -321,26 +316,19 @@ controls.save = function(context, pixels, previous, image_base) {
         canclable: false
     });
 
-    var base64 = btoa(
-                    pixels.join('')
-                    .match(/(.{8})/g)
-                    .map(function(x) {
-                      return String.fromCharCode(parseInt(x, 2));
-                    })
-                    .join('') // ??
-                  );
+    var pixels_b64 = b64encode(pixels);
 
     done_button.dispatchEvent(done_event);
     if (previous.id) {
       image_base.child(id).set({
         parent_id: previous.id,
-        pixels: base64,
+        pixels: pixels_b64,
         position: previous.position + 1
       })
     } else {
       image_base.child(id).set({
         parent_id: '',
-        pixels: base64,
+        pixels: pixels_b64,
         position: 1
       })
     }
@@ -366,6 +354,60 @@ function element(name, attributes) {
   return node;
 }
 
+// binary array to b64
+function b64encode(pixel_data) {
+  var pixels_b64 = btoa(
+      pixel_data.join('')
+      .match(/(.{8})/g)
+      .map(function(x) {
+        return String.fromCharCode(parseInt(x, 2));
+      })
+      .join('')
+    );
+    //compress
+    var pixels_b64c = pixels_b64.replace(/AA/g, '!')
+                        .replace(/!!/g, '@')
+                        .replace(/@@/g, '#')
+                        .replace(/###/g, '%')
+                        .replace(/%%%%/g, '&')
+                        .replace(/\/\//g, '*')
+                        .replace(/\*\*/g, '(')
+                        .replace(/\(\(/g, ')')
+    return pixels_b64c;
+}
+
+// b64 string to binary array
+function b64decode(pixels_b64c) {
+  //decompress
+  pixels_b64 = pixels_b64c.replace(/\)/g, '((')
+                          .replace(/\(/g, '**')
+                          .replace(/\*/g, '//')
+                          .replace(/&/g, '%%%%')
+                          .replace(/%/g, '###')
+                          .replace(/#/g, '@@')
+                          .replace(/@/g, '!!')
+                          .replace(/!/g, 'AA')
+
+  var pixel_data = atob(pixels_b64)  //convert from base64
+      .split('')
+      .map(function(x) {
+        return ('0000000' + x.charCodeAt(0).toString(2)).substr(-8, 8);
+      })
+      .join('')   // "0101"
+      .split('') // ["0","1","0","1"]
+      .map(Number); // [0,1,0,1]
+  return pixel_data;
+}
+
+// generates a short ID
+function shortID() {
+  var id = '';
+  for (var i = 0; i < ID_LENGTH; i++) {
+    id += ALPHABET.charAt(Math.floor(Math.random() * ALPHABET.length));
+  }
+  return id;
+}
+
 //the following allows for removing of elements like so: document.getElementById("my-element").remove();
 Element.prototype.remove = function() {
     this.parentElement.removeChild(this);
@@ -376,13 +418,4 @@ NodeList.prototype.remove = HTMLCollection.prototype.remove = function() {
             this[i].parentElement.removeChild(this[i]);
         }
     }
-}
-
-// generates a short ID
-function shortID() {
-  var id = '';
-  for (var i = 0; i < ID_LENGTH; i++) {
-    id += ALPHABET.charAt(Math.floor(Math.random() * ALPHABET.length));
-  }
-  return id;
 }
