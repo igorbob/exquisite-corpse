@@ -40,7 +40,17 @@ function initCanvas(parent) {
   if (previous.id)
     image_base.child(previous.id).once('value', gotParent);
   function gotParent(data) {
-    var pixel_data = data.val().pixels.split('').map(Number);
+
+    var pixel_data =
+        atob(data.val().pixels)  //convert from base64
+        .split('')
+        .map(function(x) {
+          return ('0000000' + x.charCodeAt(0).toString(2)).substr(-8, 8);
+        })
+        .join('')   // "0101"
+        .split('') // ["0","1","0","1"]
+        .map(Number) // [0,1,0,1]
+
     previous.position = data.val().position;
     var pos_text = ((previous.position + 1) + "/" + FOLD_LENGTH);
     position_indicator.innerHTML = pos_text;
@@ -310,17 +320,27 @@ controls.save = function(context, pixels, previous, image_base) {
         bubbles: true,
         canclable: false
     });
+
+    var base64 = btoa(
+                    pixels.join('')
+                    .match(/(.{8})/g)
+                    .map(function(x) {
+                      return String.fromCharCode(parseInt(x, 2));
+                    })
+                    .join('') // ??
+                  );
+
     done_button.dispatchEvent(done_event);
     if (previous.id) {
       image_base.child(id).set({
         parent_id: previous.id,
-        pixels: pixels.join(''),
+        pixels: base64,
         position: previous.position + 1
       })
     } else {
       image_base.child(id).set({
         parent_id: '',
-        pixels: pixels.join(''),
+        pixels: base64,
         position: 1
       })
     }
