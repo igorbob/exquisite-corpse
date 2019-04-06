@@ -16,6 +16,18 @@ var controls = Object.create(null);
 //--------------------------------------------------------------------//
 
 window.onload = function() {
+
+  // #logo
+  // .paper :
+  var position_indicator = document.getElementById("position-indicator");
+  var canvas = document.getElementById('the-canvas');
+  var strip_width_indicator = document.getElementById("strip-width-indicator");
+
+  canvas.width = X * PIXEL_SIZE
+  canvas.height = Y * PIXEL_SIZE
+
+  position_indicator.innerHTML = 1 + "/" + FOLD_LENGTH;
+
   //initialize firebase
   var config = {
     apiKey: "AIzaSyCNygh6ULvyoqM9p6HXGi1--5Hl8_KsIXA",
@@ -29,13 +41,6 @@ window.onload = function() {
 
   var database = firebase.database();
   var image_base = database.ref('images');
-
-  //size canvas
-  var canvas = document.getElementById('the-canvas');
-  canvas.width = X * PIXEL_SIZE
-  canvas.height = Y * PIXEL_SIZE
-
-  document.getElementById("position-indicator").innerHTML = 1 + "/" + FOLD_LENGTH;
 
   var context = canvas.getContext("2d");
   var previous = {id: window.location.pathname.substring(1), position: 1};
@@ -88,7 +93,6 @@ window.onload = function() {
         toolbar.appendChild(download_button);
 
         getFullImage(image_base, FOLD_LENGTH, e.detail.id).then(function(pixels){
-            var anchor = document.getElementById("download-link");
             drawPixels(context, pixels, {x: X, y: pixels_y });
             anchor.href = canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
             anchor.download = 'excorp.png';
@@ -96,6 +100,7 @@ window.onload = function() {
     } else { // otherwise we return a sharable link
         var share_url = element("input", {id: "share-url", value: (window.location.hostname + '/' + e.detail.id)});
         var copy_button = element("tool-btn", {id: "copy-button"}, "COPY");
+        copy_button.classList.add('text-btn')
         toolbar.appendChild(share_url);
         toolbar.appendChild(copy_button);
         copy_button.addEventListener("click", function(){
@@ -134,7 +139,7 @@ function drawPixels(context, pixels, resolution = {x: X, y: Y}) {
   var pixel_height = c_height / resolution.y;
   context.fillStyle = "#A6AAA2";
   context.fillRect(0,0,c_width,c_height);
-  context.fillStyle = "black";
+  context.fillStyle = "#222420";
   for (var y = 0; y < resolution.y; y++) {
     for (var x = 0; x < resolution.x; x++) {
       if (pixels[(y * resolution.x)+x] == 1) {
@@ -273,6 +278,7 @@ tools.Line = function(e, context, pixels, dither_style, color = 1, thick = 0) {
       for (var brush_x = -t; brush_x <= t; brush_x++) {
         var brush_y = t - Math.abs(brush_x);
         drawLine(pixels, {x: old_pos.x + brush_x , y:old_pos.y + brush_y}, {x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y}, color);
+        drawLine(pixels, {x: old_pos.x + brush_x , y:old_pos.y - brush_y}, {x: pixel_pos.x + brush_x , y:pixel_pos.y - brush_y}, color);
         pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
         pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y - brush_y},color);
       }
@@ -309,6 +315,7 @@ tools.Dither = function(e, context, pixels, dither_style, color = 1) {
 // DONE button
 controls.save = function(context, pixels, previous, image_base) {
   var done_button = element("tool-btn", {id:"done-button"}, "DONE");
+  done_button.classList.add('text-btn');
   function update() {
     var id = shortID();
     var new_pos = previous.position + 1;
