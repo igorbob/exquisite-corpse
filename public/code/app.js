@@ -159,10 +159,16 @@ var tools = Object.create(null);
 controls.tool = function(context, pixels, previous, image_base) {
   var selected = "ThickLine";
   var dither_style = 1;
+  var styles = {
+    1: '▤',
+    2: '▧',
+    3: '▨',
+    4: '▥'
+  }
 
   var line_button = element("tool-btn", {id: "line-button"}, "・");
   var thick_button = element("tool-btn", {id: "thick-button"}, "●");  thick_button.classList.add("selected");
-  var dither_button = element("tool-btn", {id: "dither-button"}, "▨");
+  var dither_button = element("tool-btn", {id: "dither-button"}, styles[dither_style]);
   var erase_button = element("tool-btn", {id: "erase-button"}, "○");
 
   function selectTool(tool_button) {
@@ -176,6 +182,7 @@ controls.tool = function(context, pixels, previous, image_base) {
       selectTool(dither_button);
       if (selected == "Dither") {
           dither_style = (dither_style % 4) + 1;
+          dither_button.innerHTML = styles[dither_style];
       }
       selected = "Dither";});
   erase_button.addEventListener("click", function(){selectTool(erase_button); selected = "Erase";});
