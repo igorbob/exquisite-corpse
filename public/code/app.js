@@ -95,12 +95,13 @@ window.onload = function() {
         getFullImage(image_base, FOLD_LENGTH, e.detail.id).then(function(pixels){
             drawPixels(context, pixels, {x: X, y: pixels_y });
             anchor.href = canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
-            anchor.download = 'excorp.png';
+            anchor.download = 'excorp_' + e.detail.id + '.png';
         });
     } else { // otherwise we return a sharable link
         var share_url = element("input", {id: "share-url", value: (window.location.hostname + '/' + e.detail.id)});
         var copy_button = element("tool-btn", {id: "copy-button"}, "COPY");
-        copy_button.classList.add('text-btn')
+        copy_button.classList.add('text-btn');
+        canvas.classList.add('done-drawing');
         toolbar.appendChild(share_url);
         toolbar.appendChild(copy_button);
         copy_button.addEventListener("click", function(){

@@ -46,6 +46,10 @@ body {
   flex: 2;
 }
 
+.done-drawing {
+  cursor: default !important;
+}
+
 #toolbar {
   user-select: none;
   flex: 1;
@@ -62,19 +66,25 @@ body {
 }
 
 #done-button {
-  font-family: 'Inconsolata';
-  font-size: 14pt;
-  letter-spacing: 2px;
   margin-right: 12px;
   width: 120px;
 }
 
 #copy-button {
-  font-family: 'Inconsolata';
-  font-size: 14pt;
-  letter-spacing: 2px;
   margin-right: 12px;
   width: 120px;
+}
+
+#download-button {
+  width: 220px;
+}
+
+#download-link {
+  font-family: inherit;
+  letter-spacing: inherit;
+  font-size: inherit;
+  text-decoration: none;
+  color: #000;
 }
 
 .copied {
@@ -99,10 +109,12 @@ body {
 
 tool-btn {
     display: inline-block;
+    font-family: 'Inconsolata';
+    font-size: 14pt;
+    letter-spacing: 2px;
     text-align: center;
     cursor: pointer;
     line-height: 36px;
-    font-size: 12pt;
     height: 36px;
     width: 36px;
     border-style: solid;
