@@ -23,8 +23,14 @@ window.onload = function() {
   var canvas = document.getElementById('the-canvas');
   var strip_width_indicator = document.getElementById("strip-width-indicator");
 
-  canvas.width = X * PIXEL_SIZE
-  canvas.height = Y * PIXEL_SIZE
+  window.dispatchEvent(new Event('resize'));
+  // var pixel_size = 2;
+  // if( window.innerWidth < (X * PIXEL_SIZE) ) {
+  //
+  // }
+  //
+  // canvas.width = X * pixel_size;
+  // canvas.height = Y * pixel_size;
 
   position_indicator.innerHTML = 1 + "/" + FOLD_LENGTH;
 
@@ -68,7 +74,11 @@ window.onload = function() {
     drawPixels(context, pixels);
   }
 
+  canvas.addEventListener('redraw', () => {
+      drawPixels(context, pixels);
+  });
   drawPixels(context, pixels);
+
   var toolbar = document.getElementById("toolbar");
   for (var name in controls)
     toolbar.appendChild(controls[name](context, pixels, previous, image_base));
@@ -86,13 +96,14 @@ window.onload = function() {
         var download_button = element("tool-btn", {id: "download-button"});
 
         canvas.setAttribute("height", pixels_y * PIXEL_SIZE);
+        canvas.classList.add('done-drawing');
 
         var anchor = element("A", {id: "download-link"}, "DOWNLOAD");
         var download_button = element("tool-btn", {id: "download-button"});
         download_button.appendChild(anchor);
         toolbar.appendChild(download_button);
 
-        getFullImage(image_base, FOLD_LENGTH, e.detail.id).then(function(pixels){
+        getFullImage(image_base, FOLD_LENGTH, e.detail.id).then(function(pixels) {
             drawPixels(context, pixels, {x: X, y: pixels_y });
             anchor.href = canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
             anchor.download = 'excorp_' + e.detail.id + '.png';
@@ -162,8 +173,9 @@ controls.tool = function(context, pixels, previous, image_base) {
   var styles = {
     1: '▤',
     2: '▧',
-    3: '▨',
-    4: '▥'
+    3: '▩',
+    4: '▥',
+    5: '▦'
   }
 
   var line_button = element("tool-btn", {id: "line-button"}, "・");
@@ -181,7 +193,7 @@ controls.tool = function(context, pixels, previous, image_base) {
   dither_button.addEventListener("click", function(){
       selectTool(dither_button);
       if (selected == "Dither") {
-          dither_style = (dither_style % 4) + 1;
+          dither_style = (dither_style % 5) + 1;
           dither_button.innerHTML = styles[dither_style];
       }
       selected = "Dither";});
@@ -207,6 +219,8 @@ controls.tool = function(context, pixels, previous, image_base) {
 function pixelPos(e, element) {
   var rect = element.getBoundingClientRect();
 
+  var pixel_size = element.width / X;
+
   if (e.type == "touchmove") {
     pos = {x: Math.floor(e.touches[0].clientX - rect.left),
           y: Math.floor(e.touches[0].clientY - rect.top)};
@@ -214,8 +228,8 @@ function pixelPos(e, element) {
     pos = {x: Math.floor(e.clientX - rect.left),
           y: Math.floor(e.clientY - rect.top)};
   }
-  pos.x = Math.floor(pos.x / PIXEL_SIZE);
-  pos.y = Math.floor(pos.y / PIXEL_SIZE);
+  pos.x = Math.floor(pos.x / pixel_size);
+  pos.y = Math.floor(pos.y / pixel_size);
 
   return pos;
 }
@@ -281,6 +295,8 @@ tools.Line = function(e, context, pixels, dither_style, color = 1, thick = 0) {
   trackDrag(function(e) {
     var pixel_pos = pixelPos(e, context.canvas);
 
+	 thick == 0 ? scribbleNoise('thin') : scribbleNoise('thick');
+
     var t = thick;
     while (t > 0) {
       for (var brush_x = -t; brush_x <= t; brush_x++) {
@@ -307,12 +323,39 @@ tools.Dither = function(e, context, pixels, dither_style, color = 1) {
   trackDrag(function(e) {
     var pixel_pos = pixelPos(e, context.canvas);
     var t = 5;
+
+	 scribbleNoise('dither')
+
     for (var brush_x = -t; brush_x <= t; brush_x++) {
         for (var brush_y = -t; brush_y <= t; brush_y++) {
             pixel_x = pixel_pos.x + brush_x;
             pixel_y = pixel_pos.y + brush_y;
-            if (((pixel_x % dither_style) == 0 && (pixel_y % 4) == 1) || ((pixel_x % dither_style) == 1 && (pixel_y % 4) == 0) ) {
+            switch ( dither_style ) {
+              case 1:
+                if ( (pixel_y % 4) == 0 ) { // horizontal lines 0.25
                   pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
+                }
+                break;
+              case 2:
+                if ( ((pixel_x - pixel_y) % 4) == 0 ) { // diagonal lines
+                  pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y - 1},color);
+                }
+                break;
+              case 3:
+                if ( ((pixel_x + pixel_y) % 2) == 0 ) { // 0.5 dither
+                  pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
+                }
+                break;
+              case 4:
+                if ( (pixel_x % 2) == 0 ) { // vertical lines 0.5
+                  pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
+                }
+                break;
+              case 5:
+                if ( (pixel_x % 4) == 1 && (pixel_y % 4) == 2) { // dots 0.06
+                  pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
+                }
+                break;
             }
         }
     }
@@ -439,3 +482,16 @@ NodeList.prototype.remove = HTMLCollection.prototype.remove = function() {
         }
     }
 }
+
+window.addEventListener('resize', () => {
+  var canvas = document.getElementById('the-canvas');
+  var redraw_event = new CustomEvent('redraw');
+  if (window.innerWidth < (X * PIXEL_SIZE)) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerWidth;
+  } else {
+    canvas.width = X * PIXEL_SIZE;
+    canvas.height = Y * PIXEL_SIZE;
+  }
+  canvas.dispatchEvent(redraw_event);
+});

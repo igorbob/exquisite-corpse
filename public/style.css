@@ -7,6 +7,37 @@ body {
   flex-direction: column;
 }
 
+@media only screen and (max-width: 471px){
+    body {
+      padding: 0;
+      margin: 0;
+    }
+    tool-btn {
+      margin-left: 8px !important;
+    }
+    #done-button {
+        width: 90px !important;
+        margin-right: 8px !important;
+    }
+    #toolbar {
+      width: 100%;
+      justify-content: space-between;
+    }
+    #logo {
+        height: 10vh;
+        width: auto;
+        margin-bottom: 2vh !important;
+        margin-top: 2vh;
+    }
+    #strip-width-indicator {
+        display: none;
+    }
+    #position-indicator {
+        display: none;
+    }
+}
+
+
 .paper {
   flex: 1;
   display: flex;
@@ -101,6 +132,8 @@ body {
 }
 
 #share-url {
+  font-family: 'Inconsolata';
+  font-size: 12pt;
   margin-top: 12px;
   margin-left:12px;
   height: 40px;
