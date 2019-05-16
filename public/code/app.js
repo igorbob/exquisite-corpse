@@ -6,7 +6,7 @@ const FOLD_LENGTH = 3;
 const ID_LENGTH = 6;
 const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz';
 
-var controls = Object.create(null);
+const controls = Object.create(null);
 
 // main layout:
 //--------------------------------------------------------------------//
@@ -16,71 +16,63 @@ var controls = Object.create(null);
 //--------------------------------------------------------------------//
 
 window.onload = function() {
+	//initialize firebase
+   const config = {
+     apiKey: "AIzaSyCNygh6ULvyoqM9p6HXGi1--5Hl8_KsIXA",
+     authDomain: "igor-exquisite-corpse.firebaseapp.com",
+     databaseURL: "https://igor-exquisite-corpse.firebaseio.com",
+     projectId: "igor-exquisite-corpse",
+     storageBucket: "igor-exquisite-corpse.appspot.com",
+     messagingSenderId: "559778331241"
+   };
+   firebase.initializeApp(config);
+	const database = firebase.database();
+   const image_base = database.ref('images');
 
   // #logo
   // .paper :
-  var position_indicator = document.getElementById("position-indicator");
-  var canvas = document.getElementById('the-canvas');
-  var strip_width_indicator = document.getElementById("strip-width-indicator");
+  const position_indicator = document.getElementById("position-indicator");
+  const canvas = document.getElementById('the-canvas');
+  const strip_width_indicator = document.getElementById("strip-width-indicator");
 
   window.dispatchEvent(new Event('resize'));
-  // var pixel_size = 2;
-  // if( window.innerWidth < (X * PIXEL_SIZE) ) {
-  //
-  // }
-  //
-  // canvas.width = X * pixel_size;
-  // canvas.height = Y * pixel_size;
 
   position_indicator.innerHTML = 1 + "/" + FOLD_LENGTH;
 
-  //initialize firebase
-  var config = {
-    apiKey: "AIzaSyCNygh6ULvyoqM9p6HXGi1--5Hl8_KsIXA",
-    authDomain: "igor-exquisite-corpse.firebaseapp.com",
-    databaseURL: "https://igor-exquisite-corpse.firebaseio.com",
-    projectId: "igor-exquisite-corpse",
-    storageBucket: "igor-exquisite-corpse.appspot.com",
-    messagingSenderId: "559778331241"
-  };
-  firebase.initializeApp(config);
-
-  var database = firebase.database();
-  var image_base = database.ref('images');
-
-  var context = canvas.getContext("2d");
-  var previous = {id: window.location.pathname.substring(1), position: 1};
-  var pixels = [];
-  for (var y = 0; y < Y; y++) {
-    for (var x = 0; x < X; x++) {
+  const context = canvas.getContext("2d");
+  const previous = {id: window.location.pathname.substring(1), position: 1};
+  const pixels = [];
+  for (let y = 0; y < Y; y++) {
+    for (let x = 0; x < X; x++) {
       pixels.push(0);
     }
   }
 
   //get parent image if it exists
-  if (previous.id)
+  if (previous.id) {
     image_base.child(previous.id).once('value', drawPrevious);
+  }
 
   function drawPrevious(data) {
-    var pixel_data = b64decode(data.val().pixels);
+    const pixel_data = b64decode(data.val().pixels);
 
     previous.position = data.val().position;
-    var pos_text = ((previous.position + 1) + "/" + FOLD_LENGTH);
+    const pos_text = ((previous.position + 1) + "/" + FOLD_LENGTH);
     position_indicator.innerHTML = pos_text;
     if ((previous.position + 1) == FOLD_LENGTH) {strip_width_indicator.innerHTML = "";}
-    var strip_start = (X * Y) - (STRIP_SIZE * X);
-    for(var i = 0; i < (X * STRIP_SIZE);i++)
+    const strip_start = (X * Y) - (STRIP_SIZE * X);
+    for( let i = 0; i < (X * STRIP_SIZE); i++ )
       pixels[i] = pixel_data[strip_start + i];
     drawPixels(context, pixels);
   }
 
-  canvas.addEventListener('redraw', () => {
-      drawPixels(context, pixels);
-  });
-  drawPixels(context, pixels);
+	canvas.addEventListener('redraw', () => {
+	    drawPixels(context, pixels);
+	});
+	drawPixels(context, pixels);
 
   var toolbar = document.getElementById("toolbar");
-  for (var name in controls)
+  for (let name in controls)
     toolbar.appendChild(controls[name](context, pixels, previous, image_base));
 
   toolbar.addEventListener('done_drawing', function(e) {
@@ -91,26 +83,30 @@ window.onload = function() {
 
     // if we reach fold_length we draw the whole image:
     if (e.detail.position == FOLD_LENGTH) { // > ??
-        var pixels_y = (FOLD_LENGTH * Y - ((FOLD_LENGTH - 1) * STRIP_SIZE));
-        var anchor = element("A", {id: "download-link"}, "DOWNLOAD");
-        var download_button = element("tool-btn", {id: "download-button"});
+        const pixels_y = (FOLD_LENGTH * Y - ((FOLD_LENGTH - 1) * STRIP_SIZE));
+        const anchor = element("A", {id: "download-link"}, "DOWNLOAD");
+        const download_button = element("tool-btn", {id: "download-button"});
+		  const paper = document.getElementById("paper");
 
-        canvas.setAttribute("height", pixels_y * PIXEL_SIZE);
+        canvas.setAttribute("height", pixels_y); //before: * PIXEL_SIZE
+		  canvas.setAttribute("width", X);
         canvas.classList.add('done-drawing');
 
-        var anchor = element("A", {id: "download-link"}, "DOWNLOAD");
-        var download_button = element("tool-btn", {id: "download-button"});
+		  //TODO: don't show download button on iOS
         download_button.appendChild(anchor);
         toolbar.appendChild(download_button);
 
         getFullImage(image_base, FOLD_LENGTH, e.detail.id).then(function(pixels) {
             drawPixels(context, pixels, {x: X, y: pixels_y });
             anchor.href = canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
+				const image = element("IMG", {src: canvas.toDataURL("image/png")});
+				canvas.remove();
+				paper.appendChild(image);
             anchor.download = 'excorp_' + e.detail.id + '.png';
         });
     } else { // otherwise we return a sharable link
-        var share_url = element("input", {id: "share-url", value: (window.location.hostname + '/' + e.detail.id)});
-        var copy_button = element("tool-btn", {id: "copy-button"}, "COPY");
+        const share_url = element("input", {id: "share-url", value: (window.location.hostname + '/' + e.detail.id)});
+        const copy_button = element("tool-btn", {id: "copy-button"}, "COPY");
         copy_button.classList.add('text-btn');
         canvas.classList.add('done-drawing');
         toolbar.appendChild(share_url);
@@ -130,13 +126,13 @@ window.onload = function() {
 function getFullImage(image_base, position, id) {
   if (position == 1) {
       return image_base.child(id).once('value').then(function(data){
-          var pixel_data = b64decode(data.val().pixels);
+          const pixel_data = b64decode(data.val().pixels);
           return pixel_data;
       });
   } else {
       return image_base.child(id).once('value').then(function(data){
           return getFullImage(image_base, position - 1, data.val().parent_id).then(function(parent_pixels){
-              var pixel_data = b64decode(data.val().pixels);
+              const pixel_data = b64decode(data.val().pixels);
               parent_pixels.splice(-STRIP_SIZE * X); // remove strip
               return parent_pixels.concat(pixel_data);
           });
@@ -145,15 +141,15 @@ function getFullImage(image_base, position, id) {
 }
 
 function drawPixels(context, pixels, resolution = {x: X, y: Y}) {
-  var c_width = context.canvas.width;
-  var c_height = context.canvas.height;
-  var pixel_width = c_width / resolution.x;
-  var pixel_height = c_height / resolution.y;
-  context.fillStyle = "#A6AAA2";
+  const c_width = context.canvas.width;
+  const c_height = context.canvas.height;
+  const pixel_width = c_width / resolution.x;
+  const pixel_height = c_height / resolution.y;
+  context.fillStyle = '#A6AAA2';
   context.fillRect(0,0,c_width,c_height);
   context.fillStyle = "#222420";
-  for (var y = 0; y < resolution.y; y++) {
-    for (var x = 0; x < resolution.x; x++) {
+  for (let y = 0; y < resolution.y; y++) {
+    for (let x = 0; x < resolution.x; x++) {
       if (pixels[(y * resolution.x)+x] == 1) {
         context.fillRect((x * pixel_width),(y * pixel_height),pixel_width, pixel_height);
       }
@@ -165,12 +161,12 @@ function drawPixels(context, pixels, resolution = {x: X, y: Y}) {
 //    DRAWING TOOLS: ThickLine, Line, Erase & Dither      //
 // ------------------------------------------------------ //
 
-var tools = Object.create(null);
+const tools = Object.create(null);
 
 controls.tool = function(context, pixels, previous, image_base) {
-  var selected = "ThickLine";
-  var dither_style = 1;
-  var styles = {
+  let selected = "ThickLine";
+  let dither_style = 1;
+  const styles = {
     1: '▤',
     2: '▧',
     3: '▩',
@@ -178,10 +174,10 @@ controls.tool = function(context, pixels, previous, image_base) {
     5: '▦'
   }
 
-  var line_button = element("tool-btn", {id: "line-button"}, "・");
-  var thick_button = element("tool-btn", {id: "thick-button"}, "●");  thick_button.classList.add("selected");
-  var dither_button = element("tool-btn", {id: "dither-button"}, styles[dither_style]);
-  var erase_button = element("tool-btn", {id: "erase-button"}, "○");
+  const line_button = element("tool-btn", {id: "line-button"}, "・");
+  const thick_button = element("tool-btn", {id: "thick-button"}, "●");  thick_button.classList.add("selected");
+  const dither_button = element("tool-btn", {id: "dither-button"}, styles[dither_style]);
+  const erase_button = element("tool-btn", {id: "erase-button"}, "○");
 
   function selectTool(tool_button) {
       document.getElementsByClassName("selected")[0].classList.remove("selected");
@@ -199,7 +195,7 @@ controls.tool = function(context, pixels, previous, image_base) {
       selected = "Dither";});
   erase_button.addEventListener("click", function(){selectTool(erase_button); selected = "Erase";});
 
-  var select = element("div", {class: "tool-buttons"}, line_button, thick_button, dither_button, erase_button);
+  const select = element("div", {class: "tool-buttons"}, line_button, thick_button, dither_button, erase_button);
 
   context.canvas.addEventListener("touchmove", function(e) {
     tools[selected](event, context, pixels, dither_style);
@@ -217,9 +213,8 @@ controls.tool = function(context, pixels, previous, image_base) {
 };
 
 function pixelPos(e, element) {
-  var rect = element.getBoundingClientRect();
-
-  var pixel_size = element.width / X;
+  const rect = element.getBoundingClientRect();
+  const pixel_size = element.width / X;
 
   if (e.type == "touchmove") {
     pos = {x: Math.floor(e.touches[0].clientX - rect.left),
@@ -241,22 +236,22 @@ function addPixel(pixels, pos, color) {
 }
 
 function drawLine(pixels, start_pos, end_pos, color) {
-    var x1 = start_pos.x;
-    var y1 = start_pos.y;
-    var x2 = end_pos.x;
-    var y2 = end_pos.y;
+    let x1 = start_pos.x;
+    let y1 = start_pos.y;
+    const x2 = end_pos.x;
+    const y2 = end_pos.y;
 
-    var dx = Math.abs(x2 -x1);
-    var dy = Math.abs(y2 - y1);
-    var sx = (x1 < x2) ? 1 : -1;
-    var sy = (y1 < y2) ? 1 : -1;
-    var err = dx - dy;
+    const dx = Math.abs(x2 -x1);
+    const dy = Math.abs(y2 - y1);
+    const sx = (x1 < x2) ? 1 : -1;
+    const sy = (y1 < y2) ? 1 : -1;
+    let err = dx - dy;
 
     // draw first pixel
     addPixel(pixels, start_pos, color);
 
     while (!((x1 == x2) && (y1 == y2))) {
-        var e2 = err << 1;
+        const e2 = err << 1;
         if (e2 > -dy) {
             err -= dy;
             x1 += sx;
@@ -291,16 +286,16 @@ tools.ThickLine = function(e, context, pixels, dither_style) {
 };
 
 tools.Line = function(e, context, pixels, dither_style, color = 1, thick = 0) {
-  var old_pos = pixelPos(e, context.canvas);
+  let old_pos = pixelPos(e, context.canvas);
   trackDrag(function(e) {
-    var pixel_pos = pixelPos(e, context.canvas);
+    const pixel_pos = pixelPos(e, context.canvas);
 
 	 thick == 0 ? scribbleNoise('thin') : scribbleNoise('thick');
 
-    var t = thick;
+    let t = thick;
     while (t > 0) {
-      for (var brush_x = -t; brush_x <= t; brush_x++) {
-        var brush_y = t - Math.abs(brush_x);
+      for (let brush_x = -t; brush_x <= t; brush_x++) {
+        const brush_y = t - Math.abs(brush_x);
         drawLine(pixels, {x: old_pos.x + brush_x , y:old_pos.y + brush_y}, {x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y}, color);
         drawLine(pixels, {x: old_pos.x + brush_x , y:old_pos.y - brush_y}, {x: pixel_pos.x + brush_x , y:pixel_pos.y - brush_y}, color);
         pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
@@ -321,13 +316,13 @@ tools.Erase = function(e, context, pixels, dither_style) {
 
 tools.Dither = function(e, context, pixels, dither_style, color = 1) {
   trackDrag(function(e) {
-    var pixel_pos = pixelPos(e, context.canvas);
-    var t = 5;
+    const pixel_pos = pixelPos(e, context.canvas);
+    const t = 5;
 
 	 scribbleNoise('dither')
 
-    for (var brush_x = -t; brush_x <= t; brush_x++) {
-        for (var brush_y = -t; brush_y <= t; brush_y++) {
+    for (let brush_x = -t; brush_x <= t; brush_x++) {
+        for (let brush_y = -t; brush_y <= t; brush_y++) {
             pixel_x = pixel_pos.x + brush_x;
             pixel_y = pixel_pos.y + brush_y;
             switch ( dither_style ) {
@@ -365,12 +360,12 @@ tools.Dither = function(e, context, pixels, dither_style, color = 1) {
 
 // DONE button
 controls.save = function(context, pixels, previous, image_base) {
-  var done_button = element("tool-btn", {id:"done-button"}, "DONE");
+  const done_button = element("tool-btn", {id:"done-button"}, "DONE");
   done_button.classList.add('text-btn');
   function update() {
-    var id = shortID();
-    var new_pos = previous.position + 1;
-    var done_event = new CustomEvent('done_drawing', {
+    const id = shortID();
+    const new_pos = previous.position + 1;
+    const done_event = new CustomEvent('done_drawing', {
         detail: {
           id: id,
           position: new_pos
@@ -379,7 +374,7 @@ controls.save = function(context, pixels, previous, image_base) {
         canclable: false
     });
 
-    var pixels_b64 = b64encode(pixels);
+    const pixels_b64 = b64encode(pixels);
 
     done_button.dispatchEvent(done_event);
     if (previous.id) {
@@ -400,92 +395,11 @@ controls.save = function(context, pixels, previous, image_base) {
   return done_button;
 };
 
-// creates a html element
-function element(name, attributes) {
-  var node = document.createElement(name);
-  if (attributes) {
-    for (var attr in attributes)
-      if (attributes.hasOwnProperty(attr))
-        node.setAttribute(attr, attributes[attr]);
-  }
-  for (var i = 2; i < arguments.length; i++) {
-    var child = arguments[i];
-    if (typeof child == "string")
-      child = document.createTextNode(child);
-    node.appendChild(child);
-  }
-  return node;
-}
-
-// binary array to b64
-function b64encode(pixel_data) {
-  var pixels_b64 = btoa(
-      pixel_data.join('')
-      .match(/(.{8})/g)
-      .map(function(x) {
-        return String.fromCharCode(parseInt(x, 2));
-      })
-      .join('')
-    );
-    //compress
-    var pixels_b64c = pixels_b64.replace(/AA/g, '!')
-                        .replace(/!!/g, '@')
-                        .replace(/@@/g, '#')
-                        .replace(/###/g, '%')
-                        .replace(/%%%%/g, '&')
-                        .replace(/\/\//g, '*')
-                        .replace(/\*\*/g, '(')
-                        .replace(/\(\(/g, ')')
-    return pixels_b64c;
-}
-
-// b64 string to binary array
-function b64decode(pixels_b64c) {
-  //decompress
-  pixels_b64 = pixels_b64c.replace(/\)/g, '((')
-                          .replace(/\(/g, '**')
-                          .replace(/\*/g, '//')
-                          .replace(/&/g, '%%%%')
-                          .replace(/%/g, '###')
-                          .replace(/#/g, '@@')
-                          .replace(/@/g, '!!')
-                          .replace(/!/g, 'AA')
-
-  var pixel_data = atob(pixels_b64)  //convert from base64
-      .split('')
-      .map(function(x) {
-        return ('0000000' + x.charCodeAt(0).toString(2)).substr(-8, 8);
-      })
-      .join('')   // "0101"
-      .split('') // ["0","1","0","1"]
-      .map(Number); // [0,1,0,1]
-  return pixel_data;
-}
-
-// generates a short ID
-function shortID() {
-  var id = '';
-  for (var i = 0; i < ID_LENGTH; i++) {
-    id += ALPHABET.charAt(Math.floor(Math.random() * ALPHABET.length));
-  }
-  return id;
-}
-
-//the following allows for removing of elements like so: document.getElementById("my-element").remove();
-Element.prototype.remove = function() {
-    this.parentElement.removeChild(this);
-}
-NodeList.prototype.remove = HTMLCollection.prototype.remove = function() {
-    for(var i = this.length - 1; i >= 0; i--) {
-        if(this[i] && this[i].parentElement) {
-            this[i].parentElement.removeChild(this[i]);
-        }
-    }
-}
-
 window.addEventListener('resize', () => {
-  var canvas = document.getElementById('the-canvas');
-  var redraw_event = new CustomEvent('redraw');
+  const canvas = document.getElementById('the-canvas');
+
+  const redraw_event = new CustomEvent('redraw');
+
   if (window.innerWidth < (X * PIXEL_SIZE)) {
     canvas.width = window.innerWidth;
     canvas.height = window.innerWidth;

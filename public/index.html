@@ -3,9 +3,14 @@
     <meta charset="utf-8"/>
     <meta name="viewport"
       content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1" />
+
+	 <title> Exquisite Corpse - Online </title>
+	 <meta name=”description” content="Take turns in this easy collaborative drawing game. Try it out!">
     <script src="https://www.gstatic.com/firebasejs/4.8.1/firebase.js"></script>
 	 <script src="code/tone.js"></script>
-	 <script src="code/scribbleSoundEngine.js"></script>
+	 <script src="code/sounds.js"></script>
+	 <script src="code/utils.js"></script>
+	 <script src="code/b64pixels.js"></script>
     <script src="code/app.js"></script>
     <link rel="stylesheet" href="style.css">
     <link href="favicon.ico" rel="shortcut icon" type="image/x-icon" />
@@ -14,7 +19,7 @@
 
   <body>
         <img id="logo" src="logo.png" />
-        <div class="paper">
+        <div id="paper">
             <div id="position-indicator"> -/- </div>
             <canvas id="the-canvas"> </canvas>
             <div id="strip-width-indicator"> ┈ </div>
