@@ -37,7 +37,7 @@ window.onload = function() {
 
   window.dispatchEvent(new Event('resize'));
 
-  position_indicator.innerHTML = 1 + "/" + FOLD_LENGTH;
+  position_indicator.innerHTML = `1/${FOLD_LENGTH}`;
 
   const context = canvas.getContext("2d");
   const previous = {id: window.location.pathname.substring(1), position: 1};
@@ -57,7 +57,7 @@ window.onload = function() {
     const pixel_data = b64decode(data.val().pixels);
 
     previous.position = data.val().position;
-    const pos_text = ((previous.position + 1) + "/" + FOLD_LENGTH);
+    const pos_text = `${previous.position + 1}/${FOLD_LENGTH}`;
     position_indicator.innerHTML = pos_text;
     if ((previous.position + 1) == FOLD_LENGTH) {strip_width_indicator.innerHTML = "";}
     const strip_start = (X * Y) - (STRIP_SIZE * X);
@@ -71,9 +71,10 @@ window.onload = function() {
 	});
 	drawPixels(context, pixels);
 
-  var toolbar = document.getElementById("toolbar");
-  for (let name in controls)
+  const toolbar = document.getElementById("toolbar");
+  for (let name in controls) {
     toolbar.appendChild(controls[name](context, pixels, previous, image_base));
+ 	}
 
   toolbar.addEventListener('done_drawing', function(e) {
     // remove drawing tools and UI elements:
