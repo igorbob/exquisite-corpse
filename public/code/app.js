@@ -17,17 +17,17 @@ const controls = Object.create(null);
 
 window.onload = function() {
 	//initialize firebase
-   const config = {
-     apiKey: "AIzaSyCNygh6ULvyoqM9p6HXGi1--5Hl8_KsIXA",
-     authDomain: "igor-exquisite-corpse.firebaseapp.com",
-     databaseURL: "https://igor-exquisite-corpse.firebaseio.com",
-     projectId: "igor-exquisite-corpse",
-     storageBucket: "igor-exquisite-corpse.appspot.com",
-     messagingSenderId: "559778331241"
-   };
-   firebase.initializeApp(config);
-	const database = firebase.database();
-   const image_base = database.ref('images');
+  const config = {
+    apiKey: "AIzaSyCNygh6ULvyoqM9p6HXGi1--5Hl8_KsIXA",
+    authDomain: "igor-exquisite-corpse.firebaseapp.com",
+    databaseURL: "https://igor-exquisite-corpse.firebaseio.com",
+    projectId: "igor-exquisite-corpse",
+    storageBucket: "igor-exquisite-corpse.appspot.com",
+    messagingSenderId: "559778331241"
+  };
+  firebase.initializeApp(config);
+  const database = firebase.database();
+  const image_base = database.ref('images');
 
   // #logo
   // .paper :
@@ -84,60 +84,60 @@ window.onload = function() {
 
     // if we reach fold_length we draw the whole image:
     if (e.detail.position == FOLD_LENGTH) { // > ??
-        const pixels_y = (FOLD_LENGTH * Y - ((FOLD_LENGTH - 1) * STRIP_SIZE));
-        const anchor = element("A", {id: "download-link"}, "DOWNLOAD");
-        const download_button = element("tool-btn", {id: "download-button"});
+      const pixels_y = (FOLD_LENGTH * Y - ((FOLD_LENGTH - 1) * STRIP_SIZE));
+      const anchor = element("A", {id: "download-link"}, "DOWNLOAD");
+      const download_button = element("tool-btn", {id: "download-button"});
 		  const paper = document.getElementById("paper");
 
-        canvas.setAttribute("height", pixels_y); //before: * PIXEL_SIZE
+      canvas.setAttribute("height", pixels_y); //before: * PIXEL_SIZE
 		  canvas.setAttribute("width", X);
-        canvas.classList.add('done-drawing');
+      canvas.classList.add('done-drawing');
 
 		  //TODO: don't show download button on iOS
-        download_button.appendChild(anchor);
-        toolbar.appendChild(download_button);
+      download_button.appendChild(anchor);
+      toolbar.appendChild(download_button);
 
-        getFullImage(image_base, FOLD_LENGTH, e.detail.id).then(function(pixels) {
-            drawPixels(context, pixels, {x: X, y: pixels_y });
-            anchor.href = canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
+      getFullImage(image_base, FOLD_LENGTH, e.detail.id).then(function(pixels) {
+        drawPixels(context, pixels, {x: X, y: pixels_y });
+        anchor.href = canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
 				const image = element("IMG", {src: canvas.toDataURL("image/png")});
 				canvas.remove();
 				paper.appendChild(image);
-            anchor.download = 'excorp_' + e.detail.id + '.png';
-        });
+          anchor.download = 'excorp_' + e.detail.id + '.png';
+      });
     } else { // otherwise we return a sharable link
-        const share_url = element("input", {id: "share-url", value: (window.location.hostname + '/' + e.detail.id)});
-        const copy_button = element("tool-btn", {id: "copy-button"}, "COPY");
-        copy_button.classList.add('text-btn');
-        canvas.classList.add('done-drawing');
-        toolbar.appendChild(share_url);
-        toolbar.appendChild(copy_button);
-        copy_button.addEventListener("click", function(){
-            share_url.select();
-            document.execCommand("Copy");
-            copy_button.classList.add("copied");
-            copy_button.innerHTML = "COPIED";
-        });
-        share_url.focus();
+      const share_url = element("input", {id: "share-url", value: (window.location.hostname + '/' + e.detail.id)});
+      const copy_button = element("tool-btn", {id: "copy-button"}, "COPY");
+      copy_button.classList.add('text-btn');
+      canvas.classList.add('done-drawing');
+      toolbar.appendChild(share_url);
+      toolbar.appendChild(copy_button);
+      copy_button.addEventListener("click", function(){
         share_url.select();
+        document.execCommand("Copy");
+        copy_button.classList.add("copied");
+        copy_button.innerHTML = "COPIED";
+      });
+      share_url.focus();
+      share_url.select();
     }
   } , false);
 }
 
 function getFullImage(image_base, position, id) {
   if (position == 1) {
-      return image_base.child(id).once('value').then(function(data){
-          const pixel_data = b64decode(data.val().pixels);
-          return pixel_data;
-      });
+    return image_base.child(id).once('value').then(function(data){
+      const pixel_data = b64decode(data.val().pixels);
+      return pixel_data;
+    });
   } else {
-      return image_base.child(id).once('value').then(function(data){
-          return getFullImage(image_base, position - 1, data.val().parent_id).then(function(parent_pixels){
-              const pixel_data = b64decode(data.val().pixels);
-              parent_pixels.splice(-STRIP_SIZE * X); // remove strip
-              return parent_pixels.concat(pixel_data);
-          });
+    return image_base.child(id).once('value').then(function(data){
+      return getFullImage(image_base, position - 1, data.val().parent_id).then(function(parent_pixels){
+        const pixel_data = b64decode(data.val().pixels);
+        parent_pixels.splice(-STRIP_SIZE * X); // remove strip
+        return parent_pixels.concat(pixel_data);
       });
+    });
   }
 }
 
@@ -162,7 +162,7 @@ function drawPixels(context, pixels, resolution = {x: X, y: Y}) {
 //    DRAWING TOOLS: ThickLine, Line, Erase & Dither      //
 // ------------------------------------------------------ //
 
-const tools = Object.create(null);
+let tools = Object.create(null);
 
 controls.tool = function(context, pixels, previous, image_base) {
   let selected = "ThickLine";
@@ -175,25 +175,26 @@ controls.tool = function(context, pixels, previous, image_base) {
     5: '▦'
   }
 
-  const line_button = element("tool-btn", {id: "line-button"}, "・");
-  const thick_button = element("tool-btn", {id: "thick-button"}, "●");  thick_button.classList.add("selected");
+  const line_button   = element("tool-btn", {id: "line-button"}, "・");
+  const thick_button  = element("tool-btn", {id: "thick-button"}, "●");  thick_button.classList.add("selected");
   const dither_button = element("tool-btn", {id: "dither-button"}, styles[dither_style]);
-  const erase_button = element("tool-btn", {id: "erase-button"}, "○");
+  const erase_button  = element("tool-btn", {id: "erase-button"}, "○");
 
   function selectTool(tool_button) {
-      document.getElementsByClassName("selected")[0].classList.remove("selected");
-      tool_button.classList.add("selected");
+    document.getElementsByClassName("selected")[0].classList.remove("selected");
+    tool_button.classList.add("selected");
   }
 
   line_button.addEventListener("click", function(){ selectTool(line_button); selected = "Line";});
   thick_button.addEventListener("click", function(){ selectTool(thick_button); selected = "ThickLine";});
   dither_button.addEventListener("click", function(){
-      selectTool(dither_button);
-      if (selected == "Dither") {
-          dither_style = (dither_style % 5) + 1;
-          dither_button.innerHTML = styles[dither_style];
-      }
-      selected = "Dither";});
+    selectTool(dither_button);
+    if (selected == "Dither") {
+      dither_style = (dither_style % 5) + 1;
+      dither_button.innerHTML = styles[dither_style];
+    }
+    selected = "Dither";
+  });
   erase_button.addEventListener("click", function(){selectTool(erase_button); selected = "Erase";});
 
   const select = element("div", {class: "tool-buttons"}, line_button, thick_button, dither_button, erase_button);
@@ -218,11 +219,11 @@ function pixelPos(e, element) {
   const pixel_size = element.width / X;
 
   if (e.type == "touchmove") {
-    pos = {x: Math.floor(e.touches[0].clientX - rect.left),
-          y: Math.floor(e.touches[0].clientY - rect.top)};
+    pos = { x: Math.floor(e.touches[0].clientX - rect.left),
+            y: Math.floor(e.touches[0].clientY - rect.top) };
   } else {
-    pos = {x: Math.floor(e.clientX - rect.left),
-          y: Math.floor(e.clientY - rect.top)};
+    pos = { x: Math.floor(e.clientX - rect.left),
+            y: Math.floor(e.clientY - rect.top) };
   }
   pos.x = Math.floor(pos.x / pixel_size);
   pos.y = Math.floor(pos.y / pixel_size);
@@ -237,32 +238,32 @@ function addPixel(pixels, pos, color) {
 }
 
 function drawLine(pixels, start_pos, end_pos, color) {
-    let x1 = start_pos.x;
-    let y1 = start_pos.y;
-    const x2 = end_pos.x;
-    const y2 = end_pos.y;
+  let x1 = start_pos.x;
+  let y1 = start_pos.y;
+  const x2 = end_pos.x;
+  const y2 = end_pos.y;
 
-    const dx = Math.abs(x2 -x1);
-    const dy = Math.abs(y2 - y1);
-    const sx = (x1 < x2) ? 1 : -1;
-    const sy = (y1 < y2) ? 1 : -1;
-    let err = dx - dy;
+  const dx = Math.abs(x2 -x1);
+  const dy = Math.abs(y2 - y1);
+  const sx = (x1 < x2) ? 1 : -1;
+  const sy = (y1 < y2) ? 1 : -1;
+  let err = dx - dy;
 
-    // draw first pixel
-    addPixel(pixels, start_pos, color);
+  // draw first pixel
+  addPixel(pixels, start_pos, color);
 
-    while (!((x1 == x2) && (y1 == y2))) {
-        const e2 = err << 1;
-        if (e2 > -dy) {
-            err -= dy;
-            x1 += sx;
-        }
-        if (e2 < dx) {
-            err += dx;
-            y1 += sy;
-        }
-        addPixel(pixels, {x: x1, y: y1}, color);
+  while (!((x1 == x2) && (y1 == y2))) {
+    const e2 = err << 1;
+    if (e2 > -dy) {
+        err -= dy;
+        x1 += sx;
     }
+    if (e2 < dx) {
+        err += dx;
+        y1 += sy;
+    }
+    addPixel(pixels, {x: x1, y: y1}, color);
+  }
 }
 
 function trackDrag(onMove) {
@@ -291,7 +292,7 @@ tools.Line = function(e, context, pixels, dither_style, color = 1, thick = 0) {
   trackDrag(function(e) {
     const pixel_pos = pixelPos(e, context.canvas);
 
-	 thick == 0 ? scribbleNoise('thin') : scribbleNoise('thick');
+	  thick == 0 ? scribbleNoise('thin') : scribbleNoise('thick');
 
     let t = thick;
     while (t > 0) {
@@ -320,42 +321,42 @@ tools.Dither = function(e, context, pixels, dither_style, color = 1) {
     const pixel_pos = pixelPos(e, context.canvas);
     const t = 5;
 
-	 scribbleNoise('dither')
+	scribbleNoise('dither')
 
-    for (let brush_x = -t; brush_x <= t; brush_x++) {
-        for (let brush_y = -t; brush_y <= t; brush_y++) {
-            pixel_x = pixel_pos.x + brush_x;
-            pixel_y = pixel_pos.y + brush_y;
-            switch ( dither_style ) {
-              case 1:
-                if ( (pixel_y % 4) == 0 ) { // horizontal lines 0.25
-                  pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
-                }
-                break;
-              case 2:
-                if ( ((pixel_x - pixel_y) % 4) == 0 ) { // diagonal lines
-                  pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y - 1},color);
-                }
-                break;
-              case 3:
-                if ( ((pixel_x + pixel_y) % 2) == 0 ) { // 0.5 dither
-                  pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
-                }
-                break;
-              case 4:
-                if ( (pixel_x % 2) == 0 ) { // vertical lines 0.5
-                  pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
-                }
-                break;
-              case 5:
-                if ( (pixel_x % 4) == 1 && (pixel_y % 4) == 2) { // dots 0.06
-                  pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
-                }
-                break;
-            }
-        }
-    }
-    drawPixels(context, pixels);
+  for (let brush_x = -t; brush_x <= t; brush_x++) {
+      for (let brush_y = -t; brush_y <= t; brush_y++) {
+          pixel_x = pixel_pos.x + brush_x;
+          pixel_y = pixel_pos.y + brush_y;
+          switch ( dither_style ) {
+            case 1:
+              if ( (pixel_y % 4) == 0 ) { // horizontal lines 0.25
+                pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
+              }
+              break;
+            case 2:
+              if ( ((pixel_x - pixel_y) % 4) == 0 ) { // diagonal lines
+                pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y - 1},color);
+              }
+              break;
+            case 3:
+              if ( ((pixel_x + pixel_y) % 2) == 0 ) { // 0.5 dither
+                pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
+              }
+              break;
+            case 4:
+              if ( (pixel_x % 2) == 0 ) { // vertical lines 0.5
+                pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
+              }
+              break;
+            case 5:
+              if ( (pixel_x % 4) == 1 && (pixel_y % 4) == 2) { // dots 0.06
+                pixels = addPixel(pixels,{x: pixel_pos.x + brush_x , y:pixel_pos.y + brush_y},color);
+              }
+              break;
+          }
+      }
+  }
+  drawPixels(context, pixels);
   });
 }
 
@@ -367,12 +368,12 @@ controls.save = function(context, pixels, previous, image_base) {
     const id = shortID();
     const new_pos = previous.position + 1;
     const done_event = new CustomEvent('done_drawing', {
-        detail: {
-          id: id,
-          position: new_pos
-        },
-        bubbles: true,
-        canclable: false
+      detail: {
+        id: id,
+        position: new_pos
+      },
+      bubbles: true,
+      canclable: false
     });
 
     const pixels_b64 = b64encode(pixels);
@@ -398,7 +399,6 @@ controls.save = function(context, pixels, previous, image_base) {
 
 window.addEventListener('resize', () => {
   const canvas = document.getElementById('the-canvas');
-
   const redraw_event = new CustomEvent('redraw');
 
   if (window.innerWidth < (X * PIXEL_SIZE)) {
